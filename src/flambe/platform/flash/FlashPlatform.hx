@@ -70,9 +70,7 @@ class FlashPlatform
         stage.addEventListener(Event.ACTIVATE, onActivate);
         stage.addEventListener(Event.DEACTIVATE, onActivate);
 #else
-        // DEACTIVATE is fired when the Flash embed loses focus, so use throttle events in the
-        // browser instead to detect when the tab gets backgrounded
-        stage.addEventListener(ThrottleEvent.THROTTLE, onThrottle);
+
 #end
         System.hidden.changed.connect(function (hidden,_) {
             if (!hidden) {
@@ -262,11 +260,6 @@ class FlashPlatform
     private function onActivate (event :Event)
     {
         System.hidden._ = (event.type == Event.DEACTIVATE);
-    }
-
-    private function onThrottle (event :ThrottleEvent)
-    {
-        System.hidden._ = (event.state != "resume");
     }
 
     // Statically initialized subsystems
