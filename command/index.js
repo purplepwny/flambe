@@ -192,10 +192,11 @@ exports.build = function (config, platforms, opts) {
 
     var prepareEmbeddedAssetLibrary = function () {
         var hxswfmlDoc = new xmldom.DOMParser().parseFromString("<lib></lib>");
+        hxswfmlDoc.documentElement.appendChild(hxswfmlDoc.createElement("frame"));
         assetPaths.forEach(function (assetPath) {
             generateAssetXml(assetPath, hxswfmlDoc);
         });
-        hxswfmlDoc.documentElement.appendChild(hxswfmlDoc.createElement("frame"));
+        
 
         var xmlPath = CACHE_DIR+"swf/hxswfml_asset_lib_def.xml";
         fs.writeFileSync(xmlPath, new xmldom.XMLSerializer().serializeToString(hxswfmlDoc));
@@ -299,15 +300,45 @@ exports.build = function (config, platforms, opts) {
     };
 
     var buildFlash = function () {
-        var swf = "build/web/targets/main-flash.swf";
+        var flashFlags = [];
+        var dest = "";
+
+        if (get(config, "flash preloader")) {
+            dest = "build/web/targets/preloaded-flash.swc";
+            flashFlags.push("-D swf-preloader-frame");
+        }
+        else
+        {
+            dest = "build/web/targets/main-flash.swf";
+        }
 
         return prepareWeb()
         .then(function () { return prepareAssets("build/web/assets", "flash") })
         .then(function (assetFlags) {
-            console.log("Building: " + swf);
-            var flashFlags = swfFlags(false).concat([
-            "-swf-version", SWF_VERSION, "-swf", swf]);
-            return haxe(commonFlags.concat(assetFlags).concat(flashFlags));
+            console.log("Building: " + dest);
+            flashFlags = flashFlags.concat(swfFlags(false)).concat([
+            "-swf-version", SWF_VERSION, "-swf", dest, "-dce", "no", "-D flash-use-stage"]);
+            
+            var mainFlags = commonFlags.concat(assetFlags).concat(flashFlags);
+            return haxe(mainFlags);
+        }).then(function() {
+            if (get(config, "flash preloader")) {
+                var main_dest = "build/web/targets/main-flash.swf";
+                console.log("Building: " + main_dest);
+                getConnectFlags()
+                .then(function (connectFlags) {
+                    var preloaderFlags = connectFlags.concat(["-main", get(config, "flash preloader"), "-D nativeTrace", 
+                        "-D flash-use-stage", "-dce no", "-swf-version", SWF_VERSION, "-swf-lib", dest, "-debug", "-D fdb", "-swf", main_dest]);
+
+                    srcPaths.forEach(function (srcDir) {
+                        preloaderFlags.push("-cp", srcDir);
+                    });
+
+                    return haxe(preloaderFlags);
+                });
+            } else {
+                return Q();
+            }
         });
     };
 
@@ -520,15 +551,25 @@ exports.build = function (config, platforms, opts) {
         });
     };
 
+    var getConnectFlags = function()
+    {
+        var connectFlags = ["--connect", opts.haxeServer || HAXE_COMPILER_PORT];
+        return haxe(connectFlags, {check: false, verbose: false, output: false})
+        .then(function (code) {
+            // Use a Haxe compilation server if available
+            if (code == 0) {
+                return connectFlags;
+            } else {
+                return [];
+            }
+        });
+    };
+
     wrench.mkdirSyncRecursive(CACHE_DIR);
 
-    var connectFlags = ["--connect", opts.haxeServer || HAXE_COMPILER_PORT];
-    return haxe(connectFlags, {check: false, verbose: false, output: false})
-    .then(function (code) {
-        // Use a Haxe compilation server if available
-        if (code == 0) {
-            commonFlags = commonFlags.concat(connectFlags);
-        }
+    getConnectFlags()
+    .then(function (connectFlags) {
+        commonFlags = commonFlags.concat(connectFlags);
 
         commonFlags.push("-main", get(config, "main"));
         commonFlags = commonFlags.concat(toArray(get(config, "haxe_flags", [])));
