@@ -68,3 +68,6 @@ firefox:
       # type: "privileged",
       # permissions: [...]
     }
+
+flash:
+    # preloader: preloader.Preloader
