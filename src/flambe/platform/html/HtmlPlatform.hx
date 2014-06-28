@@ -230,7 +230,7 @@ class HtmlPlatform
 
         _lastUpdate = HtmlUtil.now();
 
-        // Use requestAnimationFrame if available, otherwise a 60 FPS setInterval
+        // Use requestAnimationFrame if available, otherwise a 30 FPS setInterval
         // https://developer.mozilla.org/en/DOM/window.mozRequestAnimationFrame
         var requestAnimationFrame = HtmlUtil.loadExtension("requestAnimationFrame").value;
         if (requestAnimationFrame != null) {
@@ -257,7 +257,7 @@ class HtmlPlatform
             Log.warn("No requestAnimationFrame support, falling back to setInterval");
             Browser.window.setInterval(function () {
                 update(HtmlUtil.now());
-            }, 16); // ~60 FPS
+            }, 33); // ~30 FPS
         }
 
 #if debug

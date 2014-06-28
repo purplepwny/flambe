@@ -106,7 +106,7 @@ class Library
     {
         var lib = Type.createEmptyInstance(Library);
         lib._symbols = new Map();
-        lib.frameRate = 60;
+        lib.frameRate = 30;
         lib._file = null;
 
         for (flipbook in flipbooks) {
