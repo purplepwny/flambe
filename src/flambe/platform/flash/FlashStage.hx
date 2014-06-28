@@ -39,7 +39,7 @@ class FlashStage
         resize = new Signal0();
 
         nativeStage.scaleMode = NO_SCALE;
-        nativeStage.frameRate = 60;
+        nativeStage.frameRate = 30;
         nativeStage.showDefaultContextMenu = false;
         nativeStage.addEventListener(Event.RESIZE, onResize);
 
