@@ -310,7 +310,7 @@ exports.build = function (config, platforms, opts) {
         var flashFlags = [];
         var dest = "";
 
-        if (get(config, "flash preloader")) {
+        if (get(config, "flash preloader", false)) {
             dest = "build/web/targets/preloaded-flash.swc";
             flashFlags.push("-D swf-preloader-frame");
         }
