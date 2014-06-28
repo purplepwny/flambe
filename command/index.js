@@ -194,6 +194,7 @@ exports.build = function (config, platforms, opts) {
         var hxswfmlDoc = new xmldom.DOMParser().parseFromString("<lib></lib>");
         hxswfmlDoc.documentElement.setAttribute("width", get(config, "width"));
         hxswfmlDoc.documentElement.setAttribute("height", get(config, "height"));
+        hxswfmlDoc.documentElement.setAttribute("fps", 30);
         hxswfmlDoc.documentElement.appendChild(hxswfmlDoc.createElement("frame"));
         assetPaths.forEach(function (assetPath) {
             generateAssetXml(assetPath, hxswfmlDoc);
@@ -235,7 +236,7 @@ exports.build = function (config, platforms, opts) {
         if (!get(config, "embed_assets")) {
             // when assets are embedded, we take the header from their swf library so that
             // we can also absorb their timeline with -D flash-use-stage, which is incompatible with -swf-header
-            var swfHeader = get(config, "width") + ":" + get(config, "height") + ":60:000000";
+            var swfHeader = get(config, "width") + ":" + get(config, "height") + ":30:000000";
             flags.push("-swf-header", swfHeader);
         }
         if (debug) flags.push("-D", "fdb", "-D", "advanced-telemetry");
@@ -312,7 +313,7 @@ exports.build = function (config, platforms, opts) {
 
         if (get(config, "flash preloader", false)) {
             dest = "build/web/targets/preloaded-flash.swc";
-            flashFlags.push("-D swf-preloader-frame");
+            flashFlags.push("-D swf-preloader-frame", "-dce", "no", "-D flash-use-stage");
         }
         else
         {
@@ -324,7 +325,7 @@ exports.build = function (config, platforms, opts) {
         .then(function (assetFlags) {
             console.log("Building: " + dest);
             flashFlags = flashFlags.concat(swfFlags(false)).concat([
-            "-swf-version", SWF_VERSION, "-swf", dest, "-dce", "no", "-D flash-use-stage"]);
+            "-swf-version", SWF_VERSION, "-swf", dest]);
             
             var mainFlags = commonFlags.concat(assetFlags).concat(flashFlags);
             return haxe(mainFlags);
@@ -334,8 +335,11 @@ exports.build = function (config, platforms, opts) {
                 console.log("Building: " + main_dest);
                 getConnectFlags()
                 .then(function (connectFlags) {
-                    var preloaderFlags = connectFlags.concat(["-main", get(config, "flash preloader"), "-D nativeTrace", 
-                        "-D flash-use-stage", "-dce no", "-swf-version", SWF_VERSION, "-swf-lib", dest, "-debug", "-D fdb", "-swf", main_dest]);
+                    var preloaderFlags = connectFlags.concat(["-main", get(config, "flash preloader"), "-D flash-use-stage",
+                    "-dce no", "-swf-version", SWF_VERSION, "-swf-lib", dest, "-swf", main_dest]);
+                    if (debug) {
+                        preloaderFlags.push("-debug", "-D fdb");
+                    }
 
                     srcPaths.forEach(function (srcDir) {
                         preloaderFlags.push("-cp", srcDir);
