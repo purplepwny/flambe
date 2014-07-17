@@ -578,7 +578,7 @@ exports.build = function (config, platforms, opts) {
 
     wrench.mkdirSyncRecursive(CACHE_DIR);
 
-    getConnectFlags()
+    return getConnectFlags()
     .then(function (connectFlags) {
         commonFlags = commonFlags.concat(connectFlags);
 
